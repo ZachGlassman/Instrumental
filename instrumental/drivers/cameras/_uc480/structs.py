@@ -55,7 +55,7 @@ def create_camera_list(length):
     """ Allows us to create a CAMERA_LIST with a settable number of CAMERA_INFO items """
     try:
         length = int(length)
-    except TypeError:
+    except ValueError:
         length = length.value
 
     class CAMERA_LIST(Structure):

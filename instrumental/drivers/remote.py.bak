@@ -4,12 +4,12 @@
 Support for instruments on remote servers.
 """
 
-
+from __future__ import absolute_import, unicode_literals, print_function
 import atexit
 import socket
 import struct
 import logging as log
-import pickle as pickle
+import cPickle as pickle
 
 from . import instrument, list_instruments, Instrument
 from .. import conf
@@ -18,7 +18,7 @@ from .. import conf
 try:
     import socketserver
 except ImportError:
-    import socketserver as socketserver
+    import SocketServer as socketserver
 
 DEFAULT_PORT = 28265
 
@@ -313,7 +313,7 @@ class ServerSession(Session):
             self.messenger.respond(self.serialize(response))
 
         # Clean up before we exit
-        for obj in list(self.obj_table.values()):
+        for obj in self.obj_table.values():
             if isinstance(obj, Instrument):
                 try:
                     obj.close()
@@ -403,5 +403,5 @@ client_session.sessions = {}
 
 @atexit.register
 def _cleanup_sessions():
-    for session in list(client_session.sessions.values()):
+    for session in client_session.sessions.values():
         session.close()

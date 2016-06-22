@@ -3,7 +3,7 @@
 
 import numpy as np
 from matplotlib.pyplot import subplots
-from .beam_tools import *
+from beam_tools import *
 
 
 def _flatten_list_of_lists(li):

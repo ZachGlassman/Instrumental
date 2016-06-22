@@ -84,7 +84,7 @@ class InstrumentMeta(abc.ABCMeta):
     specifying signatures for methods that are wrapped by a decorator.
     """
     def __new__(metacls, clsname, bases, classdict):
-        for name, value in list(classdict.items()):
+        for name, value in classdict.items():
             if not name.startswith('_') and (isfunction(value) or isinstance(value, property)):
                 cur_doc = value.__doc__
                 if cur_doc is None or (cur_doc.startswith(name) and '\n' not in cur_doc):
@@ -102,10 +102,11 @@ class InstrumentMeta(abc.ABCMeta):
         return super(InstrumentMeta, metacls).__new__(metacls, clsname, bases, classdict)
 
 
-class Instrument(object, metaclass=InstrumentMeta):
+class Instrument(object):
     """
     Base class for all instruments.
     """
+    __metaclass__ = InstrumentMeta
 
     def save_instrument(self, name, force=False):
         """ Save an entry for this instrument in the config file.
@@ -125,7 +126,7 @@ class Instrument(object, metaclass=InstrumentMeta):
         import os.path
         conf.load_config_file() # Reload latest version
 
-        if name in list(conf.instruments.keys()):
+        if name in conf.instruments.keys():
             if not force:
                 raise Exception("An entry already exists for '{}'!".format(name))
             else:
@@ -187,7 +188,7 @@ class Instrument(object, metaclass=InstrumentMeta):
                 # Write original trailing space
                 for l in lines[len(lines)-num_trailing:]:
                     new.write(l)
-
+        
         if os.path.exists(bak_fname):
             os.remove(bak_fname)
         os.rename(old_fname, bak_fname)
@@ -198,7 +199,7 @@ class Instrument(object, metaclass=InstrumentMeta):
 
 
 def _find_visa_inst_type(manufac, model):
-    for mod_name, tup in list(_visa_models.items()):
+    for mod_name, tup in _visa_models.items():
         mod_manufac, mod_models = tup
         if manufac == mod_manufac and model in mod_models:
             return mod_name
@@ -237,7 +238,7 @@ def list_visa_instruments():
                 continue
             except socket.timeout:
                 skipped.append(addr)
-                print(("Skipping {} due to socket.timeout".format(addr)))
+                print("Skipping {} due to socket.timeout".format(addr))
                 continue
 
             try:
@@ -306,14 +307,14 @@ def list_instruments(server=None):
 
         try:
             inst_list.extend(mod.list_instruments())
-        except Exception:
+        except AttributeError:
             # Module doesn't have a list_instruments() function
             continue
     return inst_list
 
 
 def saved_instruments():
-    return list(conf.instruments.keys())
+    return conf.instruments.keys()
 
 
 def _get_visa_instrument(params):
@@ -376,7 +377,7 @@ def instrument(inst=None, **kwargs):
         return inst
     elif isinstance(inst, dict):
         params = inst
-    elif isinstance(inst, str):
+    elif isinstance(inst, basestring):
         name = inst
         params = conf.instruments.get(name, None)
         if params is None:
@@ -430,7 +431,7 @@ def instrument(inst=None, **kwargs):
 
     # Find the right type of Instrument to create
     has_valid_params = False
-    for mod_name, acceptable in list(_acceptable_params.items()):
+    for mod_name, acceptable in _acceptable_params.items():
         if _has_acceptable_params(acceptable, params):
             has_valid_params = True
 

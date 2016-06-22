@@ -4,7 +4,7 @@
 Driver module for NI-DAQmx-supported hardware.
 """
 
-
+from __future__ import print_function, division, unicode_literals
 
 from collections import OrderedDict
 from ctypes import create_string_buffer, c_double, c_int32, c_uint32, byref
@@ -101,7 +101,7 @@ class Task(object):
         for typ in ['AI', 'AO', 'DI', 'DO']:
             if typ in self._mxtasks:
                 devname = ''
-                for ch in list(self.channels.values()):
+                for ch in self.channels.values():
                     if ch.type == typ:
                         devname = ch.dev.name
                         break
@@ -110,7 +110,7 @@ class Task(object):
                 self.master_type = typ
                 break
 
-        for typ, task in list(self._mxtasks.items()):
+        for typ, task in self._mxtasks.items():
             if typ == self.master_type:
                 clock = bytes('')
             else:
@@ -118,13 +118,13 @@ class Task(object):
 
             task.CfgSampClkTiming(clock, fsamp, edge, sample_mode, n_samples)
 
-        for typ, task in list(self._mxtasks.items()):
+        for typ, task in self._mxtasks.items():
             if typ != self.master_type:
                 task.CfgDigEdgeStartTrig(master_trig, mx.DAQmx_Val_Rising)
 
     def run(self, write_data=None):
         # Need to make sure we get data array for each output channel (AO, DO, CO...)
-        for ch_name, ch in list(self.channels.items()):
+        for ch_name, ch in self.channels.items():
             if ch.type in ('AO', 'DO', 'CO') and ch_name not in write_data:
                 raise Exception('write_data missing an array for output channel {}'
                                 .format(ch_name))
@@ -136,7 +136,7 @@ class Task(object):
 
         # Then manually start. Do we need triggering to launch all tasks at the
         # same time? Do we only start the 'main' one? So many questions...
-        for typ, mxtask in list(self._mxtasks.items()):
+        for typ, mxtask in self._mxtasks.items():
             if typ != self.master_type:
                 mxtask.StartTask()
         self._mxtasks[self.master_type].StartTask()  # Start the master last
@@ -145,7 +145,7 @@ class Task(object):
         read_data = self._read_AI_channels()
 
         self._mxtasks[self.master_type].StopTask()  # Stop the master first
-        for typ, mxtask in list(self._mxtasks.items()):
+        for typ, mxtask in self._mxtasks.items():
             if typ != self.master_type:
                 mxtask.StopTask()
 
@@ -175,10 +175,10 @@ class Task(object):
 
     def _write_AO_channels(self, data):
         task = self._mxtasks['AO']
-        ao_names = [name for (name, ch) in list(self.channels.items()) if ch.type == 'AO']
+        ao_names = [name for (name, ch) in self.channels.items() if ch.type == 'AO']
         arr = np.concatenate([Q_(data[ao]).to('V').magnitude for ao in ao_names])
         arr = arr.astype(np.float64)
-        n_samples = list(data.values())[0].magnitude.size
+        n_samples = data.values()[0].magnitude.size
         n_samples_written = c_int32()
         task.WriteAnalogF64(n_samples, False, -1.0,
                             mx.DAQmx_Val_GroupByChannel, arr,
@@ -244,7 +244,7 @@ class _Task(object):
     def _handle_ai(self, ai):
         if isinstance(ai, int):
             s = '{}/ai{}'.format(self.dev.name, ai)
-        elif isinstance(ai, str):
+        elif isinstance(ai, basestring):
             if ai.startswith(self.dev.name):
                 s = ai
             else:
@@ -254,7 +254,7 @@ class _Task(object):
     def _handle_ao(self, ao):
         if isinstance(ao, int):
             s = '{}/ao{}'.format(self.dev.name, ao)
-        elif isinstance(ao, str):
+        elif isinstance(ao, basestring):
             if ao.startswith(self.dev.name):
                 s = ao
             else:
@@ -264,7 +264,7 @@ class _Task(object):
     def _handle_di(self, di):
         if isinstance(di, int):
             s = '{}/port{}'.format(self.dev.name, di)
-        elif isinstance(di, str):
+        elif isinstance(di, basestring):
             if di.startswith(self.dev.name):
                 s = di
             else:
@@ -274,7 +274,7 @@ class _Task(object):
     def _handle_do(self, do):
         if isinstance(do, int):
             s = '{}/port{}'.format(self.dev.name, do)
-        elif isinstance(do, str):
+        elif isinstance(do, basestring):
             if do.startswith(self.dev.name):
                 s = do
             else:
@@ -369,7 +369,7 @@ class _Task(object):
         if timeout != -1.0:
             timeout = float(Q_(timeout).to('s').magnitude)
         arr = np.concatenate([data[ao].to('V').magnitude for ao in self.AOs]).astype(np.float64)
-        n_samples = list(data.values())[0].magnitude.size
+        n_samples = data.values()[0].magnitude.size
         n_samples_written = c_int32()
         self.t.WriteAnalogF64(n_samples, autostart, timeout,
                               mx.DAQmx_Val_GroupByChannel, arr,
@@ -403,7 +403,7 @@ class _Task(object):
                     ports.append(port_name)
 
         # Final int array
-        out = np.zeros(len(list(data.values())[0]), dtype=np.uint32)
+        out = np.zeros(len(data.values()[0]), dtype=np.uint32)
 
         for ch in channels:
             arr = data[ch.name]
@@ -1063,7 +1063,7 @@ class NIDAQ(DAQ):
                 ports[port_name] = []
             ports[port_name].append(line_name)
 
-        for port_name, line_names in list(ports.items()):
+        for port_name, line_names in ports.items():
             line_pairs = [(port_name, l) for l in line_names]
             chan = VirtualDigitalChannel(self, line_pairs)
             setattr(self, port_name, chan)

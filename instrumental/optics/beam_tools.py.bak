@@ -5,7 +5,7 @@ import numpy as np
 from functools import reduce
 from numpy import sqrt, complex, sign, linspace, pi
 from scipy.special import erfinv
-from .optical_elements import Space
+from optical_elements import Space
 from .. import Q_
 
 

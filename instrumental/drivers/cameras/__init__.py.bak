@@ -195,7 +195,7 @@ class Camera(Instrument):
         if self._defaults is None:
             self._defaults = DEFAULT_KWDS.copy()
 
-        for k, v in list(self._defaults.items()):
+        for k, v in self._defaults.items():
             kwds.setdefault(k, v)
 
         def fill_all_coords(kwds, names):
@@ -245,7 +245,7 @@ class Camera(Instrument):
                 left = cx - width/2
                 right = left + width
 
-            kwds.update(list(zip(names, (width, cx, left, right))))
+            kwds.update(zip(names, (width, cx, left, right)))
 
         fill_all_coords(kwds, ('width', 'cx', 'left', 'right'))
         fill_all_coords(kwds, ('height', 'cy', 'top', 'bot'))

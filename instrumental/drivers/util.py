@@ -105,7 +105,7 @@ class LibMeta(type):
 
         classdict['_lib_funcs'] = {}
 
-        for name, value in classdict.items():
+        for name, value in list(classdict.items()):
             if not name.startswith('_') and not isfunction(value):
                 flags = {'first_arg': True}
                 if not isinstance(value, tuple):
@@ -137,7 +137,7 @@ class LibMeta(type):
         return super(LibMeta, metacls).__new__(metacls, clsname, bases, classdict)
 
 
-class NiceLib(object):
+class NiceLib(object, metaclass=LibMeta):
     """Base class for mid-level library wrappers
 
     Provides a nice interface for quickly defining mid-level library wrappers. You define your own
@@ -169,7 +169,6 @@ class NiceLib(object):
         The default length for buffers. This can be overridden on a per-argument basis in the
         argument's spec string, e.g `'buf64'` will make a 64-byte buffer.
     """
-    __metaclass__ = LibMeta
     _err_wrap = None
     _prefix = ''
     _ffi = None  # MUST be filled in by subclass
@@ -195,7 +194,7 @@ class NiceLib(object):
             def __repr__(fself):
                 return fself._repr
 
-        for name, (func, repr_str) in type(self)._lib_funcs.items():
+        for name, (func, repr_str) in list(type(self)._lib_funcs.items()):
             setattr(self, name, LibFunction(name, func, repr_str))
 
 
@@ -269,7 +268,7 @@ def _unit_decorator(in_map, out_map, pos_args, named_args):
             for arg in ret:
                 if arg is None:
                     unit = None
-                elif isinstance(arg, basestring):
+                elif isinstance(arg, str):
                     optional = arg.startswith('?')
                     if optional:
                         arg = arg[1:]
@@ -288,7 +287,7 @@ def _unit_decorator(in_map, out_map, pos_args, named_args):
         for arg in pos_args:
             if arg is None:
                 unit = None
-            elif isinstance(arg, basestring):
+            elif isinstance(arg, str):
                 optional = arg.startswith('?')
                 if optional:
                     arg = arg[1:]
@@ -298,10 +297,10 @@ def _unit_decorator(in_map, out_map, pos_args, named_args):
             pos_units.append(unit)
 
         named_units = {}
-        for name, arg in named_args.items():
+        for name, arg in list(named_args.items()):
             if arg is None:
                 unit = None
-            elif isinstance(arg, basestring):
+            elif isinstance(arg, str):
                 optional = arg.startswith('?')
                 if optional:
                     arg = arg[1:]
@@ -321,7 +320,7 @@ def _unit_decorator(in_map, out_map, pos_args, named_args):
         pos_units.extend([None] * (len(arg_names) - len(pos_args)))
 
         # Add named units to positional units
-        for name, units in named_units.items():
+        for name, units in list(named_units.items()):
             try:
                 i = arg_names.index(name)
                 pos_units[i] = units
@@ -339,7 +338,7 @@ def _unit_decorator(in_map, out_map, pos_args, named_args):
         def wrapper(*args, **kwargs):
             # Convert the input arguments
             new_args = [in_map(a, u, n) for a, u, n in zip(args, pos_units, arg_names)]
-            new_kwargs = {n: in_map(a, named_units.get(n, None), n) for n, a in kwargs.items()}
+            new_kwargs = {n: in_map(a, named_units.get(n, None), n) for n, a in list(kwargs.items())}
 
             # Fill in converted defaults
             for name in arg_names[max(len(args), len(arg_names)-len(defaults)):]:
