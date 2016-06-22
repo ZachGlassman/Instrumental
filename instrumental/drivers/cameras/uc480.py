@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 # Copyright 2013-2015 Nate Bogdanowicz
 """
@@ -349,6 +350,11 @@ class UC480_Camera(Camera):
             return num.value
         raise Exception("Return code {}".format(ret))
 
+    # ZAG 6/22/2016
+    def _get_gain_info(self):
+        return lib.is_SetHardwareGain(IS_GET_MASTER_GAIN)
+
+
     def _get_max_img_size(self):
         # TODO: Make this more robust
         sInfo = SENSORINFO()
@@ -356,7 +362,7 @@ class UC480_Camera(Camera):
         return int(sInfo.nMaxWidth), int(sInfo.nMaxHeight)
 
     def _get_sensor_color_mode(self):
-        #new encodings
+        #new encodings ZAG 6/22/2016
         import binascii
         sInfo = SENSORINFO()
         lib.is_GetSensorInfo(self._hcam, byref(sInfo))
@@ -434,6 +440,7 @@ class UC480_Camera(Camera):
         self._set_binning(kwds['vbin'], kwds['hbin'])
         self._set_AOI(kwds['left'], kwds['top'], kwds['right'], kwds['bot'])
         self._set_exposure(kwds['exposure_time'])
+        self._set_gain(kwds['gain'])
 
         self._free_image_mem_seq()
         self._allocate_mem_seq(kwds['n_frames'])
@@ -541,6 +548,19 @@ class UC480_Camera(Camera):
     def _refresh_sizes(self):
         _, _, self._width, self._height = self._get_AOI()
         self._max_width, self._max_height = self._get_max_img_size()
+
+    # ZAG 6/22/2016 - set gain for hardware
+    def _set_gain(self, gain):
+        if gain <= 13 and gain >= 1:
+            param = gain * 100
+        else:
+            print('gain too high, setting to 1')
+            param = 100
+
+        ret = lib.is_SetHWGainFactor(self._hcam, IS_SET_MASTER_GAIN_FACTOR, param)
+        if ret == -1:
+            print('Did not work')
+        return param
 
     @check_units(exp_time='ms')
     def _set_exposure(self, exp_time):
